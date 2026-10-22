@@ -1,0 +1,4 @@
+from structures.cola_prioridad import ColaPrioridadReservas
+from structures.cola import ColaCaminando
+from structures.pila import PilaHistorial
+from structures.cola_circular import ColaCircular
