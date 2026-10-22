@@ -1,3 +1,5 @@
+![1792636944496](images/README/1792636944496.png)
+
 # MesaFlow
 
 Sistema de gestión de reservas para restaurantes, desarrollado en Python con interfaz gráfica. Forma parte de la primera fase del curso de Estructuras de Datos, en la que el objetivo es aplicar estructuras lineales para resolver un problema real de negocio.
