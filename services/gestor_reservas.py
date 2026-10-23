@@ -25,11 +25,14 @@ class GestorReservas:
         self.cola_prioridad = ColaPrioridadReservas()
         self.cola_caminando = ColaCaminando()
         self.pila_historial = PilaHistorial()
+        self.pila_atenciones = PilaHistorial()   # pila para servicios completados
         self.cola_mesas = self.armar_cola_circular()
 
         # Catálogo completo
         self.reservas = []
         self.historial = []          # respaldo del historial (la pila es la que manda)
+        self.caminando_en_mesa = []  # los que están sentados sin reserva
+        self.atenciones = []         # respaldo de atenciones completadas
         self.siguiente_id = 1
 
     def armar_cola_circular(self):
@@ -91,23 +94,27 @@ class GestorReservas:
         return self.cola_prioridad.tamanio()
 
     def confirmar(self, id_reserva):
-        #pendiente -> en_curso
+        #pendiente -> en_curso, marca la mesa como ocupada
         reserva = self.obtener(id_reserva)
         if reserva is None:
             return False
         if reserva.estado != EstadoReserva.PENDIENTE:
             return False
         reserva.estado = EstadoReserva.EN_CURSO
+        self.gestor_mesas.cambiar_estado(reserva.mesa_id, "ocupada")
         return True
 
     def completar(self, id_reserva):
-        #en_curso -> completada
+        #en_curso -> completada, libera la mesa y guarda en atenciones
         reserva = self.obtener(id_reserva)
         if reserva is None:
             return False
         if reserva.estado != EstadoReserva.EN_CURSO:
             return False
         reserva.estado = EstadoReserva.COMPLETADA
+        self.gestor_mesas.cambiar_estado(reserva.mesa_id, "disponible")
+        self.pila_atenciones.apilar(reserva)
+        self.atenciones.append(reserva)
         return True
 
     def cancelar(self, id_reserva):
@@ -139,9 +146,36 @@ class GestorReservas:
         return caminando
 
     def atender_caminando(self):
-        #Atiende al primero de la fila (FIFO). None si no hay nadie.
-        self.ultimo_atendido = self.cola_caminando.desencolar()
-        return self.ultimo_atendido
+        #Atiende al primero de la fila (FIFO), le asigna mesa y lo sienta.
+        caminando = self.cola_caminando.desencolar()
+        if caminando is None:
+            return None
+
+        # Asignar mesa por round-robin
+        mesa = self.siguiente_mesa()
+        if mesa is not None:
+            caminando.mesa_id = mesa.id
+            self.gestor_mesas.cambiar_estado(mesa.id, "ocupada")
+
+        self.caminando_en_mesa.append(caminando)
+        self.ultimo_atendido = caminando
+        return caminando
+
+    def listar_caminando_en_mesa(self):
+        #Los que están sentados sin reserva.
+        return list(self.caminando_en_mesa)
+
+    def finalizar_caminando(self, id_caminando):
+        #Termina el servicio de un caminando, libera la mesa y guarda en atenciones.
+        for caminando in self.caminando_en_mesa:
+            if caminando.id == int(id_caminando):
+                self.caminando_en_mesa.remove(caminando)
+                if caminando.mesa_id is not None:
+                    self.gestor_mesas.cambiar_estado(caminando.mesa_id, "disponible")
+                self.pila_atenciones.apilar(caminando)
+                self.atenciones.append(caminando)
+                return caminando
+        return None
 
     def ver_caminando(self):
        #Los que están esperando, en orden de llegada.
@@ -149,7 +183,6 @@ class GestorReservas:
 
     def total_caminando(self):
         return self.cola_caminando.tamanio()
-
     #  ROUND-ROBIN DE MESAS (Cola circular)
 
 
@@ -177,6 +210,16 @@ class GestorReservas:
     def total_cancelaciones(self):
         return self.pila_historial.tamanio()
 
+    #  ATENCIONES COMPLETADAS (Pila LIFO)
+
+
+    def ver_atenciones(self):
+        #Los servicios completados, el más reciente primero.
+        return self.pila_atenciones.listar()
+
+    def total_atenciones(self):
+        return self.pila_atenciones.tamanio()
+
     #  CHEQUEO DE DISPONIBILIDAD
 
 
@@ -203,14 +246,23 @@ class GestorReservas:
     #  PARA EL JSON
 
 
-    def cargar_desde_listas(self, reservas_dicts, caminando_dicts, historial_dicts):
+    def cargar_desde_listas(self, reservas_dicts, caminando_dicts, historial_dicts,
+                            caminando_en_mesa_dicts=None, atenciones_dicts=None):
         #Carga todo desde el JSON.
         self.reservas = []
         self.historial = []
+        self.caminando_en_mesa = []
+        self.atenciones = []
         self.siguiente_id = 1
         self.cola_prioridad = ColaPrioridadReservas()
         self.cola_caminando = ColaCaminando()
         self.pila_historial = PilaHistorial()
+        self.pila_atenciones = PilaHistorial()
+
+        if caminando_en_mesa_dicts is None:
+            caminando_en_mesa_dicts = []
+        if atenciones_dicts is None:
+            atenciones_dicts = []
 
         # Primero los clientes y las mesas, porque las reservas los necesitan
         for datos in reservas_dicts:
@@ -246,6 +298,20 @@ class GestorReservas:
             )
             self.cola_caminando.encolar(caminando)
 
+        # Caminando que ya están sentados en mesa
+        for datos in caminando_en_mesa_dicts:
+            cliente = self.gestor_clientes.obtener_por_nombre(datos["cliente"])
+            if cliente is None:
+                continue
+
+            self.siguiente_id = self.siguiente_id + 1
+            caminando = Caminando(
+                datos.get("id", self.siguiente_id), cliente.id,
+                datos["personas"], datos["hora"],
+                datos.get("mesa", None)
+            )
+            self.caminando_en_mesa.append(caminando)
+
         # El historial se carga en orden inverso, porque la pila
         # muestra el último arriba. El JSON guarda el primero arriba.
         for datos in reversed(historial_dicts):
@@ -262,5 +328,32 @@ class GestorReservas:
             )
             self.pila_historial.apilar(reserva)
             self.historial.append(reserva)
+
+        # Las atenciones completadas (pila, orden inverso)
+        for datos in reversed(atenciones_dicts):
+            cliente = self.gestor_clientes.obtener_por_nombre(datos["cliente"])
+            if cliente is None:
+                continue
+
+            from datetime import datetime
+            tipo = datos.get("tipo", "reserva")
+
+            if tipo == "caminando":
+                caminando = Caminando(
+                    datos.get("id", 0), cliente.id,
+                    datos["personas"], datos["hora"],
+                    datos.get("mesa", None)
+                )
+                self.pila_atenciones.apilar(caminando)
+                self.atenciones.append(caminando)
+            else:
+                fecha = datetime.strptime(datos["fecha"], "%Y-%m-%d").date()
+                hora = datetime.strptime(datos["hora"], "%H:%M").time()
+                reserva = Reserva(
+                    datos["id"], cliente.id, datos["mesa"],
+                    fecha, hora, 90, "completada"
+                )
+                self.pila_atenciones.apilar(reserva)
+                self.atenciones.append(reserva)
 
         self.cola_mesas = self.armar_cola_circular()

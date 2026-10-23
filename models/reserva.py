@@ -103,11 +103,12 @@ class Reserva:
 
 
 class Caminando:
-    def __init__(self, id, cliente_id, personas, hora_llegada):
+    def __init__(self, id, cliente_id, personas, hora_llegada, mesa_id=None):
         self.id = int(id)
         self.cliente_id = int(cliente_id)
         self.personas = int(personas)
         self.hora_llegada = hora_llegada      # texto "HH:MM"
+        self.mesa_id = int(mesa_id) if mesa_id is not None else None
 
     def __str__(self):
         return "Cliente {} - {} personas - {}".format(
@@ -117,13 +118,16 @@ class Caminando:
     # Conversión a/desde diccionario (para el JSON) 
 
     def a_dict(self, posicion, nombre_cliente):
-        return {
+        resultado = {
             "pos": str(posicion),
             "id": str(self.id),
             "cliente": nombre_cliente,
             "personas": str(self.personas),
             "hora": self.hora_llegada,
         }
+        if self.mesa_id is not None:
+            resultado["mesa"] = str(self.mesa_id)
+        return resultado
 
     @staticmethod
     def desde_dict(datos, id_cliente):
@@ -132,4 +136,5 @@ class Caminando:
             id_cliente,
             datos["personas"],
             datos["hora"],
+            datos.get("mesa", None),
         )

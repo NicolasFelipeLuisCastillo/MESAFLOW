@@ -39,6 +39,8 @@ def cargar_sistema(gestor_mesas, gestor_clientes, gestor_reservas):
         datos.get("reservas", []),
         datos.get("caminando", []),
         datos.get("historial", []),
+        datos.get("caminando_en_mesa", []),
+        datos.get("atenciones", []),
     )
     return True
 
@@ -51,7 +53,9 @@ def guardar_sistema(gestor_mesas, gestor_clientes, gestor_reservas):
         "clientes": gestor_clientes.lista_dicts(),
         "reservas": reservas_a_dicts(gestor_reservas, gestor_clientes),
         "caminando": caminando_a_dicts(gestor_reservas, gestor_clientes),
+        "caminando_en_mesa": caminando_en_mesa_a_dicts(gestor_reservas, gestor_clientes),
         "historial": historial_a_dicts(gestor_reservas, gestor_clientes),
+        "atenciones": atenciones_a_dicts(gestor_reservas, gestor_clientes),
     }
 
     archivo = open(ARCHIVO, "w", encoding="utf-8")
@@ -156,6 +160,63 @@ def historial_para_tabla(gestor_reservas, gestor_clientes):
     return resultado
 
 
+def caminando_en_mesa_para_tabla(gestor_reservas, gestor_clientes):
+    #Los caminando que ya están sentados en una mesa.
+    resultado = []
+    posicion = 1
+
+    for caminando in gestor_reservas.listar_caminando_en_mesa():
+        cliente = gestor_clientes.obtener(caminando.cliente_id)
+        nombre = cliente.nombre if cliente is not None else "Desconocido"
+
+        mesa_texto = str(caminando.mesa_id) if caminando.mesa_id is not None else "---"
+
+        resultado.append({
+            "pos": str(posicion),
+            "id": str(caminando.id),
+            "cliente": nombre,
+            "personas": str(caminando.personas),
+            "mesa": mesa_texto,
+            "hora": caminando.hora_llegada,
+        })
+        posicion = posicion + 1
+
+    return resultado
+
+
+def atenciones_para_tabla(gestor_reservas, gestor_clientes):
+    #Los servicios completados, EL MÁS RECIENTE ARRIBA (LIFO pila_atenciones).
+    from models.reserva import Reserva, Caminando
+    resultado = []
+
+    for item in gestor_reservas.ver_atenciones():
+        if isinstance(item, Reserva):
+            cliente = gestor_clientes.obtener(item.cliente_id)
+            nombre = cliente.nombre if cliente is not None else "Desconocido"
+            resultado.append({
+                "id": str(item.id),
+                "tipo": "Reserva",
+                "cliente": nombre,
+                "mesa": str(item.mesa_id),
+                "fecha": item.fecha.isoformat(),
+                "hora": item.hora_inicio.strftime("%H:%M"),
+            })
+        elif isinstance(item, Caminando):
+            cliente = gestor_clientes.obtener(item.cliente_id)
+            nombre = cliente.nombre if cliente is not None else "Desconocido"
+            mesa_texto = str(item.mesa_id) if item.mesa_id is not None else "---"
+            resultado.append({
+                "id": str(item.id),
+                "tipo": "Sin reserva",
+                "cliente": nombre,
+                "mesa": mesa_texto,
+                "fecha": "---",
+                "hora": item.hora_llegada,
+            })
+
+    return resultado
+
+
 #Funciones que usan los conversores, para el guardado
 
 def reservas_a_dicts(gestor_reservas, gestor_clientes):
@@ -179,6 +240,18 @@ def caminando_a_dicts(gestor_reservas, gestor_clientes):
     return resultado
 
 
+def caminando_en_mesa_a_dicts(gestor_reservas, gestor_clientes):
+    #Serializa los caminando que están sentados en mesa.
+    resultado = []
+    posicion = 1
+    for caminando in gestor_reservas.listar_caminando_en_mesa():
+        cliente = gestor_clientes.obtener(caminando.cliente_id)
+        nombre = cliente.nombre if cliente is not None else "Desconocido"
+        resultado.append(caminando.a_dict(posicion, nombre))
+        posicion = posicion + 1
+    return resultado
+
+
 def historial_a_dicts(gestor_reservas, gestor_clientes):
     resultado = []
     # Guardamos el más antiguo primero, porque al cargar se vuelve a voltear
@@ -193,4 +266,35 @@ def historial_a_dicts(gestor_reservas, gestor_clientes):
             "hora": reserva.hora_inicio.strftime("%H:%M"),
             "tiempo": "Hace un momento",
         })
+    return resultado
+
+
+def atenciones_a_dicts(gestor_reservas, gestor_clientes):
+    #Serializa las atenciones completadas.
+    from models.reserva import Reserva, Caminando
+    resultado = []
+    # Guardamos el más antiguo primero, porque al cargar se vuelve a voltear
+    for item in gestor_reservas.atenciones:
+        cliente = gestor_clientes.obtener(item.cliente_id)
+        nombre = cliente.nombre if cliente is not None else "Desconocido"
+
+        if isinstance(item, Caminando):
+            mesa_texto = str(item.mesa_id) if item.mesa_id is not None else "---"
+            resultado.append({
+                "tipo": "caminando",
+                "id": str(item.id),
+                "cliente": nombre,
+                "mesa": mesa_texto,
+                "personas": str(item.personas),
+                "hora": item.hora_llegada,
+            })
+        else:
+            resultado.append({
+                "tipo": "reserva",
+                "id": str(item.id),
+                "cliente": nombre,
+                "mesa": str(item.mesa_id),
+                "fecha": item.fecha.isoformat(),
+                "hora": item.hora_inicio.strftime("%H:%M"),
+            })
     return resultado

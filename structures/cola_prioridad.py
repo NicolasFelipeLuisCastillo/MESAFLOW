@@ -26,14 +26,14 @@ class ColaPrioridadReservas:
 
     def desencolar(self):
         #Saca la más prioritaria. None si está vacía
-        if len(self._monticulo) == 0:
+        if self.esta_vacia():
             return None
         elemento = heapq.heappop(self._monticulo)
         return elemento[2]
 
     def primero(self):
         #Mira la más prioritaria SIN sacarla"
-        if len(self._monticulo) == 0:
+        if self.esta_vacia():
             return None
         return self._monticulo[0][2]
 
@@ -43,11 +43,32 @@ class ColaPrioridadReservas:
     def tamanio(self):
         return len(self._monticulo)
 
-    def listar(self):
-        #Todas las reservas en orden de prioridad (sin sacarlas).
-        copia = list(self._monticulo)
-        copia.sort()
+    def _merge_sort(self, lista):
+        if len(lista) <= 1:
+            return lista
+        
+        medio = len(lista) // 2
+        izq = self._merge_sort(lista[:medio])
+        der = self._merge_sort(lista[medio:])
+        
+        # Mezcla respetando (prioridad, contador)
         resultado = []
-        for elemento in copia:
-            resultado.append(elemento[2])
+        i = j = 0
+        while i < len(izq) and j < len(der):
+            # Comparamos tuplas: prioridad primero, contador en empate
+            if (izq[i][0], izq[i][1]) <= (der[j][0], der[j][1]):
+                resultado.append(izq[i])
+                i += 1
+            else:
+                resultado.append(der[j])
+                j += 1
+        
+        resultado.extend(izq[i:])
+        resultado.extend(der[j:])
         return resultado
+
+    # Listar usando merge sort.
+    def listar(self):
+        copia = list(self._monticulo)
+        ordenada = self._merge_sort(copia)
+        return [elemento[2] for elemento in ordenada]

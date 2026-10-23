@@ -275,7 +275,7 @@ class VistaClientes:
                 messagebox.showinfo("Éxito", "Cliente '{}' eliminado.".format(nombre))
 
 
-#  VISTA RESERVAS  (usa la COLA CON PRIORIDAD)
+#  VISTA RESERVAS  (usa la COLA CON PRIORIDAD) — con pestañas Pendientes / En Curso
 class VistaReservas:
     def __init__(self, area_dinamica, app):
         self.area_dinamica = area_dinamica
@@ -283,11 +283,12 @@ class VistaReservas:
 
         self.area_dinamica.grid_columnconfigure(0, weight=1)
         self.area_dinamica.grid_columnconfigure(1, weight=3)
-        self.area_dinamica.grid_rowconfigure(0, weight=1)
+        self.area_dinamica.grid_rowconfigure(1, weight=1)
 
+        # ---- Formulario (izquierda, fila 1) ----
         self.frame_form = ctk.CTkFrame(self.area_dinamica, fg_color=self.app.COLOR_BG_SOFT,
                                        border_color="#E5E7EB", border_width=1)
-        self.frame_form.grid(row=0, column=0, padx=(0, 15), pady=10, sticky="nsew")
+        self.frame_form.grid(row=1, column=0, padx=(0, 15), pady=10, sticky="nsew")
 
         ctk.CTkLabel(self.frame_form, text="Nueva Reserva",
                      font=("Inter", 15, "bold"), text_color="black").pack(pady=10, padx=15, anchor="w")
@@ -321,9 +322,21 @@ class VistaReservas:
                       font=("Inter", 12, "bold"),
                       command=self.crear_reserva).pack(fill="x", padx=15, pady=15)
 
-        #Tabla
+        # ---- Pestañas superiores (fila 0, columnas 0-1) ----
+        self.pestanias = ctk.CTkSegmentedButton(
+            self.area_dinamica, values=["Pendientes", "En Curso"],
+            font=("Inter", 12, "bold"), fg_color="#E5E7EB",
+            selected_color=self.app.COLOR_ACCENT, selected_hover_color="#7C2D12",
+            unselected_color="#F5F5F4", unselected_hover_color="#D6D3D1",
+            text_color="white", text_color_disabled="#57534E",
+            command=self.cambiar_pestania
+        )
+        self.pestanias.grid(row=0, column=0, columnspan=2, sticky="ew", padx=10, pady=(0, 5))
+        self.pestania_actual = "Pendientes"
+
+        # ---- Panel derecho (fila 1, columna 1) ----
         self.frame_tabla = ctk.CTkFrame(self.area_dinamica, fg_color="transparent")
-        self.frame_tabla.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
+        self.frame_tabla.grid(row=1, column=1, padx=10, pady=10, sticky="nsew")
         self.frame_tabla.grid_columnconfigure(0, weight=1)
         self.frame_tabla.grid_rowconfigure(1, weight=1)
 
@@ -335,6 +348,7 @@ class VistaReservas:
         style.configure("Reserva.Treeview", background="white", fieldbackground="white",
                         rowheight=38, font=("Inter", 11))
 
+        # Tabla de pendientes
         self.tabla = ttk.Treeview(self.frame_tabla,
                                   columns=("ID", "Cliente", "Mesa", "Hora", "Estado"),
                                   show="headings", style="Reserva.Treeview")
@@ -343,25 +357,64 @@ class VistaReservas:
         self.tabla.heading("Mesa", text="Mesa")
         self.tabla.heading("Hora", text="Hora")
         self.tabla.heading("Estado", text="Estado")
-
         self.tabla.column("ID", width=40, anchor="center")
         self.tabla.column("Cliente", width=150, anchor="w")
         self.tabla.column("Mesa", width=60, anchor="center")
         self.tabla.column("Hora", width=80, anchor="center")
         self.tabla.column("Estado", width=120, anchor="center")
-        self.tabla.grid(row=1, column=0, sticky="nsew")
 
-        frame_botones = ctk.CTkFrame(self.frame_tabla, fg_color="transparent")
-        frame_botones.grid(row=2, column=0, sticky="e", pady=(10, 0))
+        # Tabla de en curso
+        self.tabla_en_curso = ttk.Treeview(self.frame_tabla,
+                                  columns=("ID", "Cliente", "VIP", "Mesa", "Hora"),
+                                  show="headings", style="Reserva.Treeview")
+        self.tabla_en_curso.heading("ID", text="ID")
+        self.tabla_en_curso.heading("Cliente", text="Cliente")
+        self.tabla_en_curso.heading("VIP", text="VIP")
+        self.tabla_en_curso.heading("Mesa", text="Mesa")
+        self.tabla_en_curso.heading("Hora", text="Hora")
+        self.tabla_en_curso.column("ID", width=40, anchor="center")
+        self.tabla_en_curso.column("Cliente", width=160, anchor="w")
+        self.tabla_en_curso.column("VIP", width=50, anchor="center")
+        self.tabla_en_curso.column("Mesa", width=60, anchor="center")
+        self.tabla_en_curso.column("Hora", width=80, anchor="center")
 
-        ctk.CTkButton(frame_botones, text="Confirmar (En Curso)", fg_color="#15803D",
+        # Botones de pendientes
+        self.frame_botones_pend = ctk.CTkFrame(self.frame_tabla, fg_color="transparent")
+        ctk.CTkButton(self.frame_botones_pend, text="Confirmar (En Curso)", fg_color="#15803D",
                       font=("Inter", 11, "bold"),
                       command=self.confirmar_reserva).pack(side="left", padx=5)
-        ctk.CTkButton(frame_botones, text="Cancelar Reserva", fg_color="#DC2626",
+        ctk.CTkButton(self.frame_botones_pend, text="Cancelar Reserva", fg_color="#DC2626",
                       font=("Inter", 11, "bold"),
                       command=self.cancelar_reserva).pack(side="left", padx=5)
 
-        self.actualizar_tabla()
+        # Botones de en curso
+        self.frame_botones_curso = ctk.CTkFrame(self.frame_tabla, fg_color="transparent")
+        ctk.CTkButton(self.frame_botones_curso, text="✓ Completar y Cobrar", fg_color="#7C3AED",
+                      hover_color="#5B21B6", font=("Inter", 11, "bold"),
+                      command=self.completar_reserva).pack(side="left", padx=5)
+
+        self.pestanias.set("Pendientes")
+        self.cambiar_pestania("Pendientes")
+
+    def cambiar_pestania(self, valor):
+        self.pestania_actual = valor
+
+        # Ocultar todo
+        self.tabla.grid_remove()
+        self.tabla_en_curso.grid_remove()
+        self.frame_botones_pend.grid_remove()
+        self.frame_botones_curso.grid_remove()
+
+        if valor == "Pendientes":
+            self.frame_form.grid()
+            self.tabla.grid(row=1, column=0, sticky="nsew")
+            self.frame_botones_pend.grid(row=2, column=0, sticky="e", pady=(10, 0))
+            self.actualizar_tabla()
+        else:
+            self.frame_form.grid_remove()
+            self.tabla_en_curso.grid(row=1, column=0, sticky="nsew")
+            self.frame_botones_curso.grid(row=2, column=0, sticky="e", pady=(10, 0))
+            self.actualizar_tabla_en_curso()
 
     def verificar_cliente_vip(self, nombre):
         #Marco morado si el cliente elegido es VIP.
@@ -391,7 +444,7 @@ class VistaReservas:
                                             self.app.gestor_clientes)
 
         for reserva in reservas:
-            if reserva["vip"] == "✓":
+            if reserva["vip"] == "X":
                 texto_cliente = "[VIP] " + reserva["cliente"]
             else:
                 texto_cliente = reserva["cliente"]
@@ -407,7 +460,37 @@ class VistaReservas:
             text="Pendientes: {}  |  En curso: {}".format(pendientes, en_curso))
 
         # Se refresca solo cada 3 segundos
-        self._refresco_id = self.area_dinamica.after(3000, self.actualizar_tabla)
+        if self.pestania_actual == "Pendientes":
+            self._refresco_id = self.area_dinamica.after(3000, self.actualizar_tabla)
+
+    def actualizar_tabla_en_curso(self):
+        #Dibuja las reservas EN CURSO (cliente sentado).
+
+        if hasattr(self, "_refresco_id"):
+            try:
+                self.area_dinamica.after_cancel(self._refresco_id)
+            except Exception:
+                pass
+
+        for fila in self.tabla_en_curso.get_children():
+            self.tabla_en_curso.delete(fila)
+
+        en_curso = datos.reservas_en_curso_para_tabla(self.app.gestor_reservas,
+                                                      self.app.gestor_clientes)
+
+        for reserva in en_curso:
+            self.tabla_en_curso.insert("", "end", values=(
+                reserva["id"], reserva["cliente"], reserva["vip"],
+                reserva["mesa"], reserva["hora"]
+            ))
+
+        pendientes = self.app.gestor_reservas.total_pendientes()
+        total_curso = len(en_curso)
+        self.lbl_contador.configure(
+            text="Pendientes: {}  |  En curso: {}".format(pendientes, total_curso))
+
+        if self.pestania_actual == "En Curso":
+            self._refresco_id = self.area_dinamica.after(3000, self.actualizar_tabla_en_curso)
 
     def leer_hora(self, texto):
         #Convierte 'HH:MM' en un objeto time. Devuelve None si no sirve.
@@ -487,9 +570,26 @@ class VistaReservas:
         if self.app.gestor_reservas.confirmar(id_reserva):
             self.app.guardar_datos_sistema()
             self.actualizar_tabla()
-            messagebox.showinfo("Éxito", "La reserva ahora está En curso.")
+            messagebox.showinfo("Éxito", "La reserva ahora está En curso.\nLa mesa fue marcada como Ocupada.")
         else:
             messagebox.showerror("Error", "Esa reserva no se puede confirmar.")
+
+    def completar_reserva(self):
+        #Completa la reserva: libera la mesa y mueve al historial de atenciones.
+        seleccion = self.tabla_en_curso.selection()
+        if not seleccion:
+            messagebox.showwarning("Atención", "Selecciona una reserva en curso.")
+            return
+
+        id_reserva = self.tabla_en_curso.item(seleccion)["values"][0]
+
+        if messagebox.askyesno("Confirmar", "¿Completar y cobrar esta reserva?\nLa mesa quedará libre."):
+            if self.app.gestor_reservas.completar(id_reserva):
+                self.app.guardar_datos_sistema()
+                self.actualizar_tabla_en_curso()
+                messagebox.showinfo("Completada", "Servicio finalizado. Mesa liberada.")
+            else:
+                messagebox.showerror("Error", "No se pudo completar esa reserva.")
 
     def cancelar_reserva(self):
 
@@ -511,7 +611,7 @@ class VistaReservas:
                 self.actualizar_tabla()
                 messagebox.showinfo("Cancelada", "Reserva movida al historial.")
 
-#  VISTA CAMINANDO  (Cola FIFO)
+#  VISTA CAMINANDO  (Cola FIFO) — con pestañas En Espera / En Mesa
 class VistaCaminando:
     def __init__(self, area_dinamica, app):
         self.area_dinamica = area_dinamica
@@ -519,11 +619,12 @@ class VistaCaminando:
 
         self.area_dinamica.grid_columnconfigure(0, weight=1)
         self.area_dinamica.grid_columnconfigure(1, weight=3)
-        self.area_dinamica.grid_rowconfigure(0, weight=1)
+        self.area_dinamica.grid_rowconfigure(1, weight=1)
 
+        # ---- Formulario (izquierda, fila 1) ----
         self.frame_form = ctk.CTkFrame(self.area_dinamica, fg_color=self.app.COLOR_BG_SOFT,
                                        border_color="#E5E7EB", border_width=1)
-        self.frame_form.grid(row=0, column=0, padx=(0, 15), pady=10, sticky="nsew")
+        self.frame_form.grid(row=1, column=0, padx=(0, 15), pady=10, sticky="nsew")
 
         ctk.CTkLabel(self.frame_form, text="Registro sin Reserva",
                      font=("Inter", 15, "bold"), text_color="black").pack(pady=10, padx=15, anchor="w")
@@ -552,9 +653,21 @@ class VistaCaminando:
                       font=("Inter", 12, "bold"),
                       command=self.agregar_a_cola).pack(fill="x", padx=15, pady=15)
 
-        # Tabla
+        # ---- Pestañas superiores ----
+        self.pestanias = ctk.CTkSegmentedButton(
+            self.area_dinamica, values=["En Espera", "En Mesa"],
+            font=("Inter", 12, "bold"), fg_color="#E5E7EB",
+            selected_color=self.app.COLOR_ACCENT, selected_hover_color="#7C2D12",
+            unselected_color="#F5F5F4", unselected_hover_color="#D6D3D1",
+            text_color="white", text_color_disabled="#57534E",
+            command=self.cambiar_pestania
+        )
+        self.pestanias.grid(row=0, column=0, columnspan=2, sticky="ew", padx=10, pady=(0, 5))
+        self.pestania_actual = "En Espera"
+
+        # ---- Panel derecho ----
         self.frame_tabla = ctk.CTkFrame(self.area_dinamica, fg_color="transparent")
-        self.frame_tabla.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
+        self.frame_tabla.grid(row=1, column=1, padx=10, pady=10, sticky="nsew")
         self.frame_tabla.grid_columnconfigure(0, weight=1)
         self.frame_tabla.grid_rowconfigure(1, weight=1)
 
@@ -566,6 +679,7 @@ class VistaCaminando:
         style.configure("Caminando.Treeview", background="white", fieldbackground="white",
                         rowheight=38, font=("Inter", 11))
 
+        # Tabla de espera (FIFO)
         self.tabla = ttk.Treeview(self.frame_tabla,
                                   columns=("Pos", "Cliente", "Personas", "Hora"),
                                   show="headings", style="Caminando.Treeview")
@@ -573,18 +687,59 @@ class VistaCaminando:
         self.tabla.heading("Cliente", text="Cliente")
         self.tabla.heading("Personas", text="Personas")
         self.tabla.heading("Hora", text="Hora de llegada")
-
         self.tabla.column("Pos", width=50, anchor="center")
         self.tabla.column("Cliente", width=180, anchor="w")
         self.tabla.column("Personas", width=80, anchor="center")
         self.tabla.column("Hora", width=120, anchor="center")
-        self.tabla.grid(row=1, column=0, sticky="nsew")
 
-        ctk.CTkButton(self.frame_tabla, text="Atender sig.", fg_color="#15803D",
+        # Tabla de en mesa (sentados sin reserva)
+        self.tabla_en_mesa = ttk.Treeview(self.frame_tabla,
+                                  columns=("ID", "Cliente", "Personas", "Mesa", "Hora"),
+                                  show="headings", style="Caminando.Treeview")
+        self.tabla_en_mesa.heading("ID", text="ID")
+        self.tabla_en_mesa.heading("Cliente", text="Cliente")
+        self.tabla_en_mesa.heading("Personas", text="Personas")
+        self.tabla_en_mesa.heading("Mesa", text="Mesa")
+        self.tabla_en_mesa.heading("Hora", text="Hora llegada")
+        self.tabla_en_mesa.column("ID", width=40, anchor="center")
+        self.tabla_en_mesa.column("Cliente", width=160, anchor="w")
+        self.tabla_en_mesa.column("Personas", width=80, anchor="center")
+        self.tabla_en_mesa.column("Mesa", width=60, anchor="center")
+        self.tabla_en_mesa.column("Hora", width=100, anchor="center")
+
+        # Botón de espera
+        self.frame_btn_espera = ctk.CTkFrame(self.frame_tabla, fg_color="transparent")
+        ctk.CTkButton(self.frame_btn_espera, text="Atender sig.", fg_color="#15803D",
                       hover_color="#14532D", font=("Inter", 12, "bold"),
-                      command=self.atender_siguiente).grid(row=2, column=0, sticky="e", pady=(10, 0))
+                      command=self.atender_siguiente).pack(side="left", padx=5)
 
-        self.actualizar_tabla()
+        # Botón de en mesa
+        self.frame_btn_mesa = ctk.CTkFrame(self.frame_tabla, fg_color="transparent")
+        ctk.CTkButton(self.frame_btn_mesa, text="✓ Liberar Mesa y Cobrar", fg_color="#7C3AED",
+                      hover_color="#5B21B6", font=("Inter", 12, "bold"),
+                      command=self.finalizar_caminando).pack(side="left", padx=5)
+
+        self.pestanias.set("En Espera")
+        self.cambiar_pestania("En Espera")
+
+    def cambiar_pestania(self, valor):
+        self.pestania_actual = valor
+
+        self.tabla.grid_remove()
+        self.tabla_en_mesa.grid_remove()
+        self.frame_btn_espera.grid_remove()
+        self.frame_btn_mesa.grid_remove()
+
+        if valor == "En Espera":
+            self.frame_form.grid()
+            self.tabla.grid(row=1, column=0, sticky="nsew")
+            self.frame_btn_espera.grid(row=2, column=0, sticky="e", pady=(10, 0))
+            self.actualizar_tabla()
+        else:
+            self.frame_form.grid_remove()
+            self.tabla_en_mesa.grid(row=1, column=0, sticky="nsew")
+            self.frame_btn_mesa.grid(row=2, column=0, sticky="e", pady=(10, 0))
+            self.actualizar_tabla_en_mesa()
 
     def actualizar_tabla(self):
         #El orden lo da la COLA FIFO, no un sort()
@@ -599,8 +754,29 @@ class VistaCaminando:
                 fila["pos"], fila["cliente"], fila["personas"], fila["hora"]
             ))
 
+        en_espera = len(fila_datos)
+        en_mesa = len(self.app.gestor_reservas.listar_caminando_en_mesa())
         self.lbl_contador.configure(
-            text="En espera: {} grupos".format(len(fila_datos)))
+            text="En espera: {} grupos  |  En mesa: {}".format(en_espera, en_mesa))
+
+    def actualizar_tabla_en_mesa(self):
+        #Los que están sentados sin reserva.
+        for fila in self.tabla_en_mesa.get_children():
+            self.tabla_en_mesa.delete(fila)
+
+        fila_datos = datos.caminando_en_mesa_para_tabla(self.app.gestor_reservas,
+                                                        self.app.gestor_clientes)
+
+        for fila in fila_datos:
+            self.tabla_en_mesa.insert("", "end", values=(
+                fila["id"], fila["cliente"], fila["personas"],
+                fila["mesa"], fila["hora"]
+            ))
+
+        en_espera = self.app.gestor_reservas.total_caminando()
+        en_mesa = len(fila_datos)
+        self.lbl_contador.configure(
+            text="En espera: {} grupos  |  En mesa: {}".format(en_espera, en_mesa))
 
     def agregar_a_cola(self):
         nombre_cliente = self.combo_cliente.get()
@@ -641,8 +817,7 @@ class VistaCaminando:
         messagebox.showinfo("Éxito", "{} agregado a la cola".format(cliente.nombre))
 
     def atender_siguiente(self):
-        #Saca el primero de la cola FIFO
-        # Le pedimos al GESTOR que saque el primero de la cola
+        #Saca el primero de la cola FIFO, le asigna mesa y lo sienta.
         atendido = self.app.gestor_reservas.atender_caminando()
 
         if atendido is None:
@@ -652,30 +827,66 @@ class VistaCaminando:
         cliente = self.app.gestor_clientes.obtener(atendido.cliente_id)
         nombre = cliente.nombre if cliente is not None else "el cliente"
 
+        mesa_texto = ""
+        if atendido.mesa_id is not None:
+            mesa_texto = "\nSe le asignó la Mesa {}.".format(atendido.mesa_id)
+
         self.app.guardar_datos_sistema()
         self.actualizar_tabla()
-        messagebox.showinfo("Atención", "¡Atendiste a {}!".format(nombre))
+        messagebox.showinfo("Atención", "¡Atendiste a {}!{}".format(nombre, mesa_texto))
 
-#  VISTA HISTORIAL  (Pila LIFO)
+    def finalizar_caminando(self):
+        #Libera la mesa y mueve al historial de atenciones.
+        seleccion = self.tabla_en_mesa.selection()
+        if not seleccion:
+            messagebox.showwarning("Atención", "Selecciona un cliente de la tabla.")
+            return
+
+        valores = self.tabla_en_mesa.item(seleccion)["values"]
+        id_caminando = valores[0]  # columna "ID"
+
+        if messagebox.askyesno("Confirmar", "¿Finalizar servicio y liberar la mesa?"):
+            resultado = self.app.gestor_reservas.finalizar_caminando(id_caminando)
+            if resultado is not None:
+                self.app.guardar_datos_sistema()
+                self.actualizar_tabla_en_mesa()
+                messagebox.showinfo("Finalizado", "Mesa liberada. Servicio registrado en atenciones.")
+            else:
+                messagebox.showerror("Error", "No se pudo finalizar ese servicio.")
+
+#  VISTA HISTORIAL  (Pila LIFO) — con pestañas Cancelaciones / Atenciones
 class VistaHistorial:
     def __init__(self, area_dinamica, app):
         self.area_dinamica = area_dinamica
         self.app = app
 
         self.area_dinamica.grid_columnconfigure(0, weight=1)
-        self.area_dinamica.grid_rowconfigure(1, weight=1)
+        self.area_dinamica.grid_rowconfigure(2, weight=1)
+
+        # ---- Pestañas superiores ----
+        self.pestanias = ctk.CTkSegmentedButton(
+            self.area_dinamica, values=["Cancelaciones", "Atenciones"],
+            font=("Inter", 12, "bold"), fg_color="#E5E7EB",
+            selected_color=self.app.COLOR_ACCENT, selected_hover_color="#7C2D12",
+            unselected_color="#F5F5F4", unselected_hover_color="#D6D3D1",
+            text_color="white", text_color_disabled="#57534E",
+            command=self.cambiar_pestania
+        )
+        self.pestanias.grid(row=0, column=0, sticky="ew", padx=10, pady=(0, 5))
+        self.pestania_actual = "Cancelaciones"
 
         self.lbl_total = ctk.CTkLabel(self.area_dinamica, text="",
                                       font=("Inter", 13, "bold"), text_color="black")
-        self.lbl_total.grid(row=0, column=0, sticky="w", pady=(0, 10))
+        self.lbl_total.grid(row=1, column=0, sticky="w", pady=(0, 10))
 
-        self.lbl_vacio = ctk.CTkLabel(self.area_dinamica, text="Aún no hay cancelaciones 📂",
+        self.lbl_vacio = ctk.CTkLabel(self.area_dinamica, text="",
                                       font=("Inter", 14, "italic"), text_color="#57534E")
 
         style = ttk.Style()
         style.configure("Historial.Treeview", background="white", fieldbackground="white",
                         rowheight=38, font=("Inter", 11))
 
+        # Tabla de cancelaciones (pila historial)
         self.tabla = ttk.Treeview(self.area_dinamica,
                                   columns=("ID", "Cliente", "Mesa", "Fecha", "Hora", "Cancelada"),
                                   show="headings", style="Historial.Treeview")
@@ -685,7 +896,6 @@ class VistaHistorial:
         self.tabla.heading("Fecha", text="Fecha")
         self.tabla.heading("Hora", text="Hora")
         self.tabla.heading("Cancelada", text="Cancelada")
-
         self.tabla.column("ID", width=50, anchor="center")
         self.tabla.column("Cliente", width=180, anchor="w")
         self.tabla.column("Mesa", width=60, anchor="center")
@@ -693,9 +903,39 @@ class VistaHistorial:
         self.tabla.column("Hora", width=80, anchor="center")
         self.tabla.column("Cancelada", width=120, anchor="center")
 
-        self.actualizar_tabla()
+        # Tabla de atenciones (pila atenciones)
+        self.tabla_atenciones = ttk.Treeview(self.area_dinamica,
+                                  columns=("ID", "Tipo", "Cliente", "Mesa", "Fecha", "Hora"),
+                                  show="headings", style="Historial.Treeview")
+        self.tabla_atenciones.heading("ID", text="#")
+        self.tabla_atenciones.heading("Tipo", text="Tipo")
+        self.tabla_atenciones.heading("Cliente", text="Cliente")
+        self.tabla_atenciones.heading("Mesa", text="Mesa")
+        self.tabla_atenciones.heading("Fecha", text="Fecha")
+        self.tabla_atenciones.heading("Hora", text="Hora")
+        self.tabla_atenciones.column("ID", width=50, anchor="center")
+        self.tabla_atenciones.column("Tipo", width=100, anchor="center")
+        self.tabla_atenciones.column("Cliente", width=160, anchor="w")
+        self.tabla_atenciones.column("Mesa", width=60, anchor="center")
+        self.tabla_atenciones.column("Fecha", width=110, anchor="center")
+        self.tabla_atenciones.column("Hora", width=80, anchor="center")
 
-    def actualizar_tabla(self):
+        self.pestanias.set("Cancelaciones")
+        self.cambiar_pestania("Cancelaciones")
+
+    def cambiar_pestania(self, valor):
+        self.pestania_actual = valor
+
+        self.tabla.grid_remove()
+        self.tabla_atenciones.grid_remove()
+        self.lbl_vacio.grid_remove()
+
+        if valor == "Cancelaciones":
+            self.actualizar_tabla_cancelaciones()
+        else:
+            self.actualizar_tabla_atenciones()
+
+    def actualizar_tabla_cancelaciones(self):
 
         #El orden de la tabla lo pone la PILA LIFO:
         #la cancelación más reciente arriba.
@@ -708,12 +948,13 @@ class VistaHistorial:
 
         if len(historial) == 0:
             self.tabla.grid_remove()
-            self.lbl_vacio.grid(row=1, column=0, pady=40, sticky="n")
+            self.lbl_vacio.configure(text="Aún no hay cancelaciones 📂")
+            self.lbl_vacio.grid(row=2, column=0, pady=40, sticky="n")
             self.lbl_total.configure(text="Total de cancelaciones: 0")
             return
 
         self.lbl_vacio.grid_remove()
-        self.tabla.grid(row=1, column=0, sticky="nsew")
+        self.tabla.grid(row=2, column=0, sticky="nsew")
 
         for cancelacion in historial:
             self.tabla.insert("", "end", values=(
@@ -723,3 +964,33 @@ class VistaHistorial:
 
         self.lbl_total.configure(
             text="Total de cancelaciones: {}".format(len(historial)))
+
+    def actualizar_tabla_atenciones(self):
+
+        #El orden de la tabla lo pone la PILA LIFO (pila_atenciones):
+        #el servicio más reciente arriba.
+
+        for fila in self.tabla_atenciones.get_children():
+            self.tabla_atenciones.delete(fila)
+
+        atenciones = datos.atenciones_para_tabla(self.app.gestor_reservas,
+                                                 self.app.gestor_clientes)
+
+        if len(atenciones) == 0:
+            self.tabla_atenciones.grid_remove()
+            self.lbl_vacio.configure(text="Aún no hay servicios completados 📋")
+            self.lbl_vacio.grid(row=2, column=0, pady=40, sticky="n")
+            self.lbl_total.configure(text="Total de atenciones: 0")
+            return
+
+        self.lbl_vacio.grid_remove()
+        self.tabla_atenciones.grid(row=2, column=0, sticky="nsew")
+
+        for atencion in atenciones:
+            self.tabla_atenciones.insert("", "end", values=(
+                atencion["id"], atencion["tipo"], atencion["cliente"],
+                atencion["mesa"], atencion["fecha"], atencion["hora"]
+            ))
+
+        self.lbl_total.configure(
+            text="Total de atenciones: {}".format(len(atenciones)))

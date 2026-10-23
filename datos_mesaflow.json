@@ -29,6 +29,18 @@
             "capacidad": "4",
             "ubicacion": "Interior",
             "estado": "Disponible"
+        },
+        {
+            "id": "6",
+            "capacidad": "4",
+            "ubicacion": "Interior",
+            "estado": "Disponible"
+        },
+        {
+            "id": "7",
+            "capacidad": "4",
+            "ubicacion": "Interior",
+            "estado": "Disponible"
         }
     ],
     "clientes": [
@@ -42,7 +54,7 @@
             "id": "2",
             "nombre": "Ana L.",
             "telefono": "555-5678",
-            "vip": "✓"
+            "vip": ""
         },
         {
             "id": "3",
@@ -60,7 +72,13 @@
             "id": "6",
             "nombre": "Maria",
             "telefono": "555-2222",
-            "vip": "✓"
+            "vip": ""
+        },
+        {
+            "id": "7",
+            "nombre": "Martines Martines",
+            "telefono": "319-9993",
+            "vip": ""
         }
     ],
     "reservas": [
@@ -71,16 +89,16 @@
             "mesa": "2",
             "fecha": "2026-10-21",
             "hora": "19:00",
-            "estado": "Pendiente"
+            "estado": "En_curso"
         },
         {
             "id": "2",
             "cliente": "Maria",
-            "vip": "✓",
+            "vip": "",
             "mesa": "3",
             "fecha": "2026-10-21",
             "hora": "21:00",
-            "estado": "Pendiente"
+            "estado": "En_curso"
         },
         {
             "id": "3",
@@ -89,16 +107,16 @@
             "mesa": "4",
             "fecha": "2026-10-21",
             "hora": "18:00",
-            "estado": "Pendiente"
+            "estado": "En_curso"
         },
         {
             "id": "4",
             "cliente": "Maria",
-            "vip": "✓",
+            "vip": "",
             "mesa": "5",
             "fecha": "2026-10-21",
             "hora": "20:00",
-            "estado": "Pendiente"
+            "estado": "En_curso"
         },
         {
             "id": "8",
@@ -107,31 +125,36 @@
             "mesa": "1",
             "fecha": "2026-10-21",
             "hora": "19:30",
-            "estado": "Pendiente"
-        }
-    ],
-    "caminando": [
-        {
-            "pos": "1",
-            "id": "6",
-            "cliente": "Pedro",
-            "personas": "3",
-            "hora": "19:10"
+            "estado": "En_curso"
         },
         {
-            "pos": "2",
-            "id": "7",
-            "cliente": "Carlos R.",
-            "personas": "2",
-            "hora": "19:15"
+            "id": "12",
+            "cliente": "Martines Martines",
+            "vip": "",
+            "mesa": "2",
+            "fecha": "2026-10-23",
+            "hora": "20:00",
+            "estado": "En_curso"
         },
         {
-            "pos": "3",
-            "id": "8",
-            "cliente": "Maria",
-            "personas": "5",
-            "hora": "19:20"
+            "id": "13",
+            "cliente": "Juan P.",
+            "vip": "",
+            "mesa": "3",
+            "fecha": "2026-10-23",
+            "hora": "19:00",
+            "estado": "Cancelada"
         }
     ],
-    "historial": []
+    "caminando": [],
+    "historial": [
+        {
+            "id": "13",
+            "cliente": "Juan P.",
+            "mesa": "3",
+            "fecha": "2026-10-23",
+            "hora": "19:00",
+            "tiempo": "Hace un momento"
+        }
+    ]
 }
