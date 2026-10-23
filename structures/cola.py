@@ -1,5 +1,6 @@
 
     #El primero que llega es el primero que se atiende.
+    # Politica FIFO (First In First Out) (El primero en entrar es el primero en salir)
 
 #COSTO:
     #encolar / desencolar -> O(1)
@@ -20,13 +21,13 @@ class ColaCaminando:
 
     def desencolar(self):
        #Saca el primero de la cola. None si está vacía
-        if len(self._cola) == 0:
+        if self.esta_vacia():
             return None
         return self._cola.popleft()
 
     def primero(self):
         #Mira el primero SIN sacarlo
-        if len(self._cola) == 0:
+        if self.esta_vacia():
             return None
         return self._cola[0]
 
