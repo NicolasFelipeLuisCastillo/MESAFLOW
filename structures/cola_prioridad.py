@@ -7,6 +7,8 @@
     #encolar / desencolar -> O(log n)
     #primero             -> O(1)
 
+#Asignación de reservas para usuarios normales o VIP
+
 import heapq
 
 

@@ -5,6 +5,8 @@
 #COSTO:
     #apilar / desapilar -> O(1)
 
+#Pila historial de cancelaciones de reservas y historial de clientes
+# completados y cobrados
 
 from datetime import datetime
 

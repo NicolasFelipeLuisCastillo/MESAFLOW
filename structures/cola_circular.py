@@ -8,6 +8,8 @@
 #COSTO:
     #Todas las operaciones son O(1).
 
+#Asignación de mesas para clientes
+
 
 
 class ColaCircular:

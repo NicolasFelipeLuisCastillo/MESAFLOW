@@ -5,6 +5,7 @@
 #COSTO:
     #encolar / desencolar -> O(1)
 
+# Cola de clientes esperando sin reserva
 
 from collections import deque
 
