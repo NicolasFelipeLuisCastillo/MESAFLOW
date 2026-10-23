@@ -27,5 +27,5 @@ class Cliente:
             datos["id"],
             datos["nombre"],
             datos["telefono"],
-            datos.get("vip") == "✓",
+            datos.get("vip") == "X",
         )

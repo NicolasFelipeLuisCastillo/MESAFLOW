@@ -69,16 +69,10 @@
             "vip": ""
         },
         {
-            "id": "6",
-            "nombre": "Maria",
-            "telefono": "555-2222",
-            "vip": ""
-        },
-        {
-            "id": "7",
-            "nombre": "Martines Martines",
-            "telefono": "319-9993",
-            "vip": ""
+            "id": "10",
+            "nombre": "Ricardo",
+            "telefono": "222-2222",
+            "vip": "X"
         }
     ],
     "reservas": [
@@ -93,12 +87,12 @@
         },
         {
             "id": "2",
-            "cliente": "Maria",
+            "cliente": "Desconocido",
             "vip": "",
             "mesa": "3",
             "fecha": "2026-10-21",
             "hora": "21:00",
-            "estado": "En_curso"
+            "estado": "Completada"
         },
         {
             "id": "3",
@@ -107,11 +101,11 @@
             "mesa": "4",
             "fecha": "2026-10-21",
             "hora": "18:00",
-            "estado": "En_curso"
+            "estado": "Completada"
         },
         {
             "id": "4",
-            "cliente": "Maria",
+            "cliente": "Desconocido",
             "vip": "",
             "mesa": "5",
             "fecha": "2026-10-21",
@@ -129,7 +123,7 @@
         },
         {
             "id": "12",
-            "cliente": "Martines Martines",
+            "cliente": "Desconocido",
             "vip": "",
             "mesa": "2",
             "fecha": "2026-10-23",
@@ -144,9 +138,55 @@
             "fecha": "2026-10-23",
             "hora": "19:00",
             "estado": "Cancelada"
+        },
+        {
+            "id": "14",
+            "cliente": "Desconocido",
+            "vip": "",
+            "mesa": "3",
+            "fecha": "2026-10-23",
+            "hora": "19:00",
+            "estado": "Completada"
+        },
+        {
+            "id": "15",
+            "cliente": "Desconocido",
+            "vip": "",
+            "mesa": "4",
+            "fecha": "2026-10-23",
+            "hora": "20:00",
+            "estado": "Completada"
+        },
+        {
+            "id": "16",
+            "cliente": "Desconocido",
+            "vip": "",
+            "mesa": "5",
+            "fecha": "2026-10-23",
+            "hora": "20:00",
+            "estado": "Completada"
+        },
+        {
+            "id": "17",
+            "cliente": "Ana L.",
+            "vip": "",
+            "mesa": "3",
+            "fecha": "2026-10-23",
+            "hora": "20:00",
+            "estado": "Pendiente"
+        },
+        {
+            "id": "18",
+            "cliente": "Ricardo",
+            "vip": "X",
+            "mesa": "4",
+            "fecha": "2026-10-23",
+            "hora": "21:00",
+            "estado": "Pendiente"
         }
     ],
     "caminando": [],
+    "caminando_en_mesa": [],
     "historial": [
         {
             "id": "13",
@@ -155,6 +195,48 @@
             "fecha": "2026-10-23",
             "hora": "19:00",
             "tiempo": "Hace un momento"
+        }
+    ],
+    "atenciones": [
+        {
+            "tipo": "reserva",
+            "id": "3",
+            "cliente": "Carlos R.",
+            "mesa": "4",
+            "fecha": "2026-10-21",
+            "hora": "18:00"
+        },
+        {
+            "tipo": "reserva",
+            "id": "2",
+            "cliente": "Desconocido",
+            "mesa": "3",
+            "fecha": "2026-10-21",
+            "hora": "21:00"
+        },
+        {
+            "tipo": "reserva",
+            "id": "16",
+            "cliente": "Desconocido",
+            "mesa": "5",
+            "fecha": "2026-10-23",
+            "hora": "20:00"
+        },
+        {
+            "tipo": "reserva",
+            "id": "15",
+            "cliente": "Desconocido",
+            "mesa": "4",
+            "fecha": "2026-10-23",
+            "hora": "20:00"
+        },
+        {
+            "tipo": "reserva",
+            "id": "14",
+            "cliente": "Desconocido",
+            "mesa": "3",
+            "fecha": "2026-10-23",
+            "hora": "19:00"
         }
     ]
 }
