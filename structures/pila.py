@@ -21,13 +21,13 @@ class PilaHistorial:
 
     def desapilar(self):
         #Saca la cima. None si está vacía
-        if len(self._pila) == 0:
+        if self.esta_vacia():
             return None
         return self._pila.pop()
 
     def cima(self):
         #Mira la cima SIN sacarla.
-        if len(self._pila) == 0:
+        if self.esta_vacia():
             return None
         return self._pila[-1]
 
